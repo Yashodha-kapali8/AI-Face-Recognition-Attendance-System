@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+{% load static %}
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Face Recognition Attendance</title>
+    <style>
+        /* General Styling */
+        body {
+            font-family: 'Roboto', Arial, sans-serif;
+            text-align: center;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(to bottom, #74ebd5, #acb6e5);
+            color: #333;
+        }
+        h1 {
+            font-size: 2.5rem;
+            color: #ffffff;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        }
+        /* Navbar Styling */
+        nav {
+            display: flex;
+            justify-content: flex-start;
+            align-items: center;
+            background-color: #007BFF;
+            padding: 10px;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+            margin-bottom: 20px;
+        }
+        nav select {
+            padding: 8px;
+            font-size: 1rem;
+            border-radius: 8px;
+            border: none;
+            outline: none;
+            background-color: #fff;
+            color: #333;
+            margin-left: 20px;
+        }
+        nav select:focus {
+            border-color: #0056b3;
+        }
+        /* Video Styling */
+        video {
+            border: 4px solid #007BFF;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+            width: 300px;
+            height: 300px;
+        }
+        /* Attendance Table Styling */
+        table {
+            width: 90%;
+            margin: 20px auto;
+            border-collapse: collapse;
+            background-color: #fff;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        th, td {
+            padding: 12px;
+            text-align: center;
+            border-bottom: 1px solid #ddd;
+        }
+        th {
+            background-color: #007BFF;
+            color: #fff;
+            font-size: 1rem;
+        }
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        tr:hover {
+            background-color: #f1f1f1;
+        }
+        /* Responsive Design */
+        @media screen and (max-width: 768px) {
+            video {
+                width: 100%;
+                height: auto;
+            }
+            table {
+                width: 100%;
+                font-size: 0.9rem;
+            }
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/blazeface"></script>
+</head>
+<body>
+    <nav>
+        <!-- Period Selection Dropdown in Navbar -->
+        <label for="period-selector" style="color: #fff; font-size: 1.2rem;">Select Period:</label>
+        <select id="period-selector">
+            <option value="" disabled selected>Select Period</option>
+            <option value="1">Period 1</option>
+            <option value="2">Period 2</option>
+            <option value="3">Period 3</option>
+            <option value="4">Period 4</option>
+            <option value="5">Period 5</option>
+            <option value="6">Period 6</option>
+            <option value="7">Period 7</option>
+            <option value="8">Period 8</option>
+        </select>
+    </nav>
+
+    <h1>Face Recognition Attendance</h1>
+    
+    <!-- Webcam Video Feed -->
+    <video id="video" autoplay playsinline></video>
+    <canvas id="canvas" style="display: none;"></canvas>
+    
+    <!-- Attendance Table -->
+    <table id="attendance-table" style="display: none;">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Status</th>
+                <th>Check-in Time</th>
+                <th>Check-out Time</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+    
+    <!-- Success Sound -->
+    <audio id="success-sound" src="{% static 'success.wav' %}" preload="auto"></audio>
+    
+    <script>
+        const video = document.getElementById('video');
+        const canvas = document.getElementById('canvas');
+        const attendanceTable = document.getElementById('attendance-table');
+        const tableBody = attendanceTable.querySelector('tbody');
+        const successSound = document.getElementById('success-sound');
+        const periodSelector = document.getElementById('period-selector');
+        let faceDetectionModel;
+
+        async function loadModel() {
+            faceDetectionModel = await blazeface.load();
+        }
+
+        // Access the user's webcam
+        navigator.mediaDevices
+            .getUserMedia({ video: true })
+            .then(stream => {
+                video.srcObject = stream;
+            })
+            .catch(err => {
+                console.error("Error accessing the webcam: ", err);
+            });
+
+        // Perform face detection periodically
+        video.addEventListener('loadeddata', () => {
+            setInterval(async () => {
+                if (faceDetectionModel) {
+                    const predictions = await faceDetectionModel.estimateFaces(video, false);
+                    if (predictions.length > 0) {
+                        captureAndSendImage();
+                    }
+                }
+            }, 2000); // Check every 2 seconds
+        });
+
+        // Capture and send the image to the server
+        function captureAndSendImage() {
+            const selectedPeriod = periodSelector.value;
+            if (!selectedPeriod) {
+                alert("Please select a period before proceeding.");
+                return;
+            }
+
+            const context = canvas.getContext('2d');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+            const dataURL = canvas.toDataURL('image/jpeg'); // Get image as Base64
+            fetch('/capture-and-recognize/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                body: JSON.stringify({ 
+                    image: dataURL, 
+                    period: selectedPeriod 
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.attendance) {
+                    updateAttendanceTable(data.attendance);
+                    successSound.play(); // Play success sound
+                } else {
+                    console.log(data.message);
+                }
+            })
+            .catch(err => {
+                console.error("Error sending image to server: ", err);
+            });
+        }
+
+        // Update the attendance table
+        function updateAttendanceTable(attendanceData) {
+            attendanceTable.style.display = 'table';
+            tableBody.innerHTML = '';
+            attendanceData.forEach(entry => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${entry.name}</td>
+                    <td>${entry.status}</td>
+                    <td>${entry.check_in_time ? new Date(entry.check_in_time).toLocaleString() : '-'}</td>
+                    <td>${entry.check_out_time ? new Date(entry.check_out_time).toLocaleString() : '-'}</td>
+                `;
+                tableBody.appendChild(row);
+            });
+        }
+
+        // Load the face detection model
+        loadModel();
+    </script>
+</body>
+</html>

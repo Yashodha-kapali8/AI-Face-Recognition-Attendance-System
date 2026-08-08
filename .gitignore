@@ -1,0 +1,38 @@
+# Python
+__pycache__/
+*.py[cod]
+
+# Virtual environments
+venv/
+.venv/
+env/
+
+# Django
+*.log
+db.sqlite3
+db.sqlite3-journal
+
+# Uploaded student images
+media/
+
+# Secrets
+.env
+
+# VS Code
+.vscode/
+
+# Other IDE files
+.idea/
+
+# Operating system
+.DS_Store
+Thumbs.db
+
+# Machine learning model files
+*.pt
+*.pth
+*.onnx
+
+# Python testing/cache
+.pytest_cache/
+.coverage
