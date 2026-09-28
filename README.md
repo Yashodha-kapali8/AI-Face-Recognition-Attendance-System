@@ -24,7 +24,7 @@ The system also supports **period-wise attendance**, allowing students to check 
 - 📊 Student attendance records
 - 🗓️ Date-wise attendance tracking
 - 🗃️ Django database management
-- 🔊 Success notification using audio
+
 - 🛡️ Prevents duplicate attendance for the same student, date, and period
 
 ## 🔄 System Workflow
@@ -70,28 +70,29 @@ The system also supports **period-wise attendance**, allowing students to check 
                     ┌──────────────────┐
                     │ Attendance Record│
                     └──────────────────┘
-🛠️ Technologies Used
-Python
-Django
-OpenCV
-PyTorch
-FaceNet-PyTorch
-MTCNN
-SQLite
-HTML / CSS
-Pygame
-🚀 How to Run
-Install dependencies
-pip install -r requirements.txt
-Apply migrations
-python manage.py migrate
-Start the server
-python manage.py runserver
+```
+### 🛠️ Technologies Used
+* Python
+* Django
+* OpenCV
+* PyTorch
+* FaceNet-PyTorch
+* MTCNN
+* SQLite
+* HTML / CSS
+* Pygame
+### 🚀 How to Run
+* Install dependencies
+* pip install -r requirements.txt
+* Apply migrations
+* python manage.py migrate
+* Start the server
+* python manage.py runserver
 
-Open:
+### Open:
 
 http://127.0.0.1:8000/
-🎯 Key Functionality
+### 🎯 Key Functionality
 
 The system maintains attendance using:
 
@@ -99,8 +100,8 @@ Student + Date + Period
 
 This prevents duplicate attendance for the same student during the same period on the same day.
 
-👨‍💻 Author
+#### 👨‍💻 Author
 
-Yashodha Kapali
+**Yashodha Kapali**
 
 GitHub: https://github.com/Yashodha-kapali8
